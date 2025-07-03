@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Barter System{% endblock %}</title>
+    <!-- Добавь свои CSS/JS здесь -->
+</head>
+<body>
+    <header>
+        <h1>Бартерная система</h1>
+        <nav>
+            <a href="{% url 'index' %}">Главная</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'create_ad' %}">Создать объявление</a>
+                <a href="#">Профиль</a>
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Выйти</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Войти</a>
+                <a href="{% url 'signup' %}">Регистрация</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+
+</body>
+</html>

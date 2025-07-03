@@ -1,0 +1,15 @@
+{% extends "ads/base.html" %}
+{% block title %}{{ ad.title }} | Бартерная система{% endblock %}
+{% block content %}
+<h2>{{ ad.title }}</h2>
+<p><strong>Описание:</strong> {{ ad.description }}</p>
+<p><strong>Категория:</strong> {{ ad.get_category_display }}</p>
+<p><strong>Состояние:</strong> {{ ad.get_condition_display }}</p>
+
+<h3>Отправить предложение обмена:</h3>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Отправить</button>
+</form>
+{% endblock %}

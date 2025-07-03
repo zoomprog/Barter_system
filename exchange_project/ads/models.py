@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# Create your models here.
-class Listing(models.Model):
+
+class Ad(models.Model):
     CATEGORIES = (
         ('E','Electronic'),
         ('C', 'Clothing'),
@@ -31,8 +31,8 @@ class ExchangeProposal(models.Model):
         ('A', 'Accepted'),
         ('R', 'Rejected'),
     )
-    ad_sender = models.ForeignKey(Listing, related_name='sent_proposals', on_delete=models.CASCADE)
-    ad_receiver = models.ForeignKey(Listing, related_name='received_proposals', on_delete=models.CASCADE)
+    ad_sender = models.ForeignKey(Ad, related_name='sent_proposals', on_delete=models.CASCADE)
+    ad_receiver = models.ForeignKey(Ad, related_name='received_proposals', on_delete=models.CASCADE)
     comment = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='P')
     created_at = models.DateTimeField(auto_now_add=True)
