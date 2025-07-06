@@ -16,6 +16,8 @@
 <p><strong>Описание:</strong> {{ ad.description }}</p>
 <p><strong>Категория:</strong> {{ ad.get_category_display }}</p>
 <p><strong>Состояние:</strong> {{ ad.get_condition_display }}</p>
+<p><strong>Автор:</strong> {{ ad.user.username }}</p>
+<p><strong>Создано:</strong> {{ ad.created_at|date:"d.m.Y H:i" }}</p>
 
 {% if ad.user == user %}
 <div class="ad-actions">
@@ -24,6 +26,19 @@
 {% endif %}
 
 <h3>Отправить предложение обмена:</h3>
+{% if form.errors %}
+<div class="alert alert-error">
+    <strong>Ошибки в форме:</strong>
+    <ul>
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}

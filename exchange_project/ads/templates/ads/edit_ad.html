@@ -13,6 +13,19 @@
 </div>
 {% endif %}
 
+{% if form.errors %}
+<div class="alert alert-error">
+    <strong>Ошибки в форме:</strong>
+    <ul>
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
