@@ -3,17 +3,191 @@
 {% block title %}Объявления{% endblock %}
 
 {% block content %}
-<h2>Вcе объявления</h2>
-<ul>
-    {% for ad in ads %}
-    <li>
-      <a href="{% url 'ad_detail' ad.pk %}">
-        {{ ad.title }}
-      </a>
-      <small>от {{ ad.user.username }}</small>
-    </li>
-    {% empty %}
-    <li>Нет объявлений</li>
-    {% endfor %}
-</ul>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-list"></i> Все объявления
+                {% if has_filters %}
+                    <span class="badge bg-primary">{{ total_results }} результатов</span>
+                {% endif %}
+            </h2>
+            
+            <!-- Форма поиска и фильтрации -->
+            <div class="card mb-4 search-form">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-search"></i> Поиск и фильтрация
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <!-- Поиск по ключевым словам -->
+                        <div class="col-md-6">
+                            <label for="search" class="form-label">Поиск по ключевым словам</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Введите название или описание...">
+                        </div>
+                        
+                        <!-- Фильтр по категории -->
+                        <div class="col-md-3">
+                            <label for="category" class="form-label">Категория</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Все категории</option>
+                                {% for code, name in categories %}
+                                    <option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>
+                                        {{ name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Фильтр по состоянию -->
+                        <div class="col-md-3">
+                            <label for="condition" class="form-label">Состояние</label>
+                            <select class="form-select" id="condition" name="condition">
+                                <option value="">Любое состояние</option>
+                                {% for code, name in conditions %}
+                                    <option value="{{ code }}" {% if condition_filter == code %}selected{% endif %}>
+                                        {{ name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Кнопки -->
+                        <div class="col-12 search-buttons">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Найти
+                            </button>
+                            <a href="{% url 'index' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Сбросить фильтры
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Результаты поиска -->
+            {% if ads %}
+                <div class="row">
+                    {% for ad in ads %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 ad-card">
+                            {% if ad.image_url %}
+                                <img src="{{ ad.image_url }}" class="card-img-top" alt="{{ ad.title }}" style="height: 200px; object-fit: cover;">
+                            {% else %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i class="fas fa-image fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <a href="{% url 'ad_detail' ad.pk %}" class="text-decoration-none">
+                                        {{ ad.title }}
+                                    </a>
+                                </h5>
+                                <p class="card-text text-muted">
+                                    {{ ad.description|truncatewords:20 }}
+                                </p>
+                                <div class="ad-meta">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> {{ ad.user.username }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar"></i> {{ ad.created_at|date:"d.m.Y" }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary">{{ ad.get_category_display }}</span>
+                                    <span class="badge bg-secondary">{{ ad.get_condition_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Пагинация -->
+                {% if ads.has_other_pages %}
+                <div class="pagination-container">
+                    <nav aria-label="Навигация по страницам">
+                    <ul class="pagination justify-content-center">
+                        {% if ads.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if condition_filter %}&condition={{ condition_filter }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ ads.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if condition_filter %}&condition={{ condition_filter }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in ads.paginator.page_range %}
+                            {% if ads.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > ads.number|add:'-3' and num < ads.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if condition_filter %}&condition={{ condition_filter }}{% endif %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if ads.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ ads.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if condition_filter %}&condition={{ condition_filter }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ ads.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if condition_filter %}&condition={{ condition_filter }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                    </nav>
+                    
+                    <div class="pagination-info">
+                        Страница {{ ads.number }} из {{ ads.paginator.num_pages }}
+                        ({{ ads.paginator.count }} объявлений всего)
+                    </div>
+                </div>
+                {% endif %}
+                
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-search"></i>
+                    <h4>
+                        {% if has_filters %}
+                            По вашему запросу ничего не найдено
+                        {% else %}
+                            Пока нет объявлений
+                        {% endif %}
+                    </h4>
+                    {% if has_filters %}
+                        <p>Попробуйте изменить параметры поиска или фильтрации</p>
+                        <a href="{% url 'index' %}" class="btn btn-primary">
+                            <i class="fas fa-times"></i> Сбросить фильтры
+                        </a>
+                    {% else %}
+                        <p>Будьте первым, кто создаст объявление!</p>
+                        <a href="{% url 'create_ad' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Создать объявление
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

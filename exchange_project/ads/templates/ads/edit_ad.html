@@ -1,44 +1,102 @@
 {% extends "ads/base.html" %}
 {% block title %}Редактировать {{ ad.title }} | Бартерная система{% endblock %}
 {% block content %}
-<h2>Редактировать объявление: {{ ad.title }}</h2>
-
-{% if messages %}
-<div class="messages">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">
-        {{ message }}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-edit"></i> Редактировать объявление: {{ ad.title }}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Ошибки в форме:</strong>
+                            <ul class="mb-0">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                <strong>Название объявления:</strong>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.help_text %}
+                                <div class="form-text">{{ form.title.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <strong>Описание:</strong>
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.help_text %}
+                                <div class="form-text">{{ form.description.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.image_url.id_for_label }}" class="form-label">
+                                <strong>URL изображения (необязательно):</strong>
+                            </label>
+                            {{ form.image_url }}
+                            {% if form.image_url.help_text %}
+                                <div class="form-text">{{ form.image_url.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label">
+                                        <strong>Категория:</strong>
+                                    </label>
+                                    {{ form.category }}
+                                    {% if form.category.help_text %}
+                                        <div class="form-text">{{ form.category.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.condition.id_for_label }}" class="form-label">
+                                        <strong>Состояние:</strong>
+                                    </label>
+                                    {{ form.condition }}
+                                    {% if form.condition.help_text %}
+                                        <div class="form-text">{{ form.condition.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Обновить объявление
+                            </button>
+                            <a href="{% url 'ad_detail' pk=ad.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                            <a href="{% url 'delete_ad' pk=ad.pk %}" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Удалить объявление
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endfor %}
 </div>
-{% endif %}
-
-{% if form.errors %}
-<div class="alert alert-error">
-    <strong>Ошибки в форме:</strong>
-    <ul>
-        {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-    </ul>
-</div>
-{% endif %}
-
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save"></i> Обновить объявление
-        </button>
-        <a href="{% url 'ad_detail' pk=ad.pk %}" class="btn btn-secondary">
-            <i class="fas fa-times"></i> Отмена
-        </a>
-        <a href="{% url 'delete_ad' pk=ad.pk %}" class="btn btn-danger">
-            <i class="fas fa-trash"></i> Удалить объявление
-        </a>
-    </div>
-</form>
 {% endblock %}

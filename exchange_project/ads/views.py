@@ -8,6 +8,8 @@ from django.urls import reverse_lazy
 from django.http import Http404
 from django.contrib import messages
 from .decorators import ad_author_required
+from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 class SignUpView(generic.CreateView):
     form_class = UserCreationForm
@@ -16,8 +18,58 @@ class SignUpView(generic.CreateView):
 
 @login_required
 def index(request):
-    ads = Ad.objects.all()
-    return render(request, 'ads/index.html', {'ads': ads})
+    """
+    Главная страница с поиском, фильтрацией и пагинацией объявлений
+    """
+    # Получаем параметры поиска и фильтрации из GET-запроса
+    search_query = request.GET.get('search', '')
+    category_filter = request.GET.get('category', '')
+    condition_filter = request.GET.get('condition', '')
+    
+    # Начинаем с базового QuerySet
+    ads = Ad.objects.all().order_by('-created_at')
+    
+    # Применяем поиск по ключевым словам
+    if search_query:
+        ads = ads.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query)
+        )
+    
+    # Применяем фильтр по категории
+    if category_filter:
+        ads = ads.filter(category=category_filter)
+    
+    # Применяем фильтр по состоянию
+    if condition_filter:
+        ads = ads.filter(condition=condition_filter)
+    
+    # Пагинация
+    paginator = Paginator(ads, 10)  # 10 объявлений на страницу
+    page = request.GET.get('page')
+    
+    try:
+        ads_page = paginator.page(page)
+    except PageNotAnInteger:
+        # Если страница не является числом, показываем первую страницу
+        ads_page = paginator.page(1)
+    except EmptyPage:
+        # Если страница больше максимальной, показываем последнюю страницу
+        ads_page = paginator.page(paginator.num_pages)
+    
+    # Подготавливаем контекст для фильтров
+    context = {
+        'ads': ads_page,
+        'search_query': search_query,
+        'category_filter': category_filter,
+        'condition_filter': condition_filter,
+        'categories': Ad.CATEGORIES,
+        'conditions': Ad.CONDITIONS,
+        'total_results': ads.count(),
+        'has_filters': bool(search_query or category_filter or condition_filter)
+    }
+    
+    return render(request, 'ads/index.html', context)
 
 
 # В views.py - исправляем логику

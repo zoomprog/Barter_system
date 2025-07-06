@@ -1,53 +1,114 @@
 {% extends "ads/base.html" %}
 {% block title %}{{ ad.title }} | Бартерная система{% endblock %}
 {% block content %}
-<h2>{{ ad.title }}</h2>
-
-{% if messages %}
-<div class="messages">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">
-        {{ message }}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Основная информация об объявлении -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="mb-0">{{ ad.title }}</h2>
+                </div>
+                <div class="card-body">
+                    {% if ad.image_url %}
+                        <img src="{{ ad.image_url }}" class="img-fluid rounded mb-3" alt="{{ ad.title }}">
+                    {% endif %}
+                    
+                    <p class="card-text">{{ ad.description }}</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-tag"></i> Категория:</strong> 
+                                <span class="badge bg-primary">{{ ad.get_category_display }}</span>
+                            </p>
+                            <p><strong><i class="fas fa-star"></i> Состояние:</strong> 
+                                <span class="badge bg-secondary">{{ ad.get_condition_display }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-user"></i> Автор:</strong> {{ ad.user.username }}</p>
+                            <p><strong><i class="fas fa-calendar"></i> Создано:</strong> {{ ad.created_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if ad.user == user %}
+                <div class="card-footer">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'edit_ad' pk=ad.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Редактировать объявление
+                        </a>
+                        <a href="{% url 'delete_ad' pk=ad.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Удалить объявление
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Форма предложения обмена -->
+            {% if not is_author %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt"></i> Отправить предложение обмена</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        <strong>Вы предлагаете обменять ваше объявление на:</strong><br>
+                        <span class="fw-bold">{{ ad.title }}</span>
+                    </p>
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Ошибки в форме:</strong>
+                        <ul class="mb-0">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="{{ form.ad_sender.id_for_label }}" class="form-label">
+                                <strong>Ваше объявление для обмена:</strong>
+                            </label>
+                            {{ form.ad_sender }}
+                            {% if form.ad_sender.help_text %}
+                                <div class="form-text">{{ form.ad_sender.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">
+                                <strong>Комментарий (необязательно):</strong>
+                            </label>
+                            {{ form.comment }}
+                            {% if form.comment.help_text %}
+                                <div class="form-text">{{ form.comment.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-paper-plane"></i> Отправить предложение
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Это ваше объявление.</strong><br>
+                Вы не можете отправить предложение обмена самому себе.
+            </div>
+            {% endif %}
+        </div>
     </div>
-    {% endfor %}
 </div>
-{% endif %}
-
-<p><strong>Описание:</strong> {{ ad.description }}</p>
-<p><strong>Категория:</strong> {{ ad.get_category_display }}</p>
-<p><strong>Состояние:</strong> {{ ad.get_condition_display }}</p>
-<p><strong>Автор:</strong> {{ ad.user.username }}</p>
-<p><strong>Создано:</strong> {{ ad.created_at|date:"d.m.Y H:i" }}</p>
-
-{% if ad.user == user %}
-<div class="ad-actions">
-    <a href="{% url 'edit_ad' pk=ad.pk %}" class="btn btn-primary">
-        <i class="fas fa-edit"></i> Редактировать объявление
-    </a>
-    <a href="{% url 'delete_ad' pk=ad.pk %}" class="btn btn-danger">
-        <i class="fas fa-trash"></i> Удалить объявление
-    </a>
-</div>
-{% endif %}
-
-<h3>Отправить предложение обмена:</h3>
-<p><strong>Вы предлагаете обменять ваше объявление на:</strong> {{ ad.title }}</p>
-{% if form.errors %}
-<div class="alert alert-error">
-    <strong>Ошибки в форме:</strong>
-    <ul>
-        {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-    </ul>
-</div>
-{% endif %}
-
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Отправить предложение</button>
-</form>
 {% endblock %}

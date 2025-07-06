@@ -4,6 +4,7 @@ from .views import SignUpView
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('search/', views.index, name='search'),  # Альтернативный URL для поиска
     # динамический параметр, который принимает целое число
     path('ad/<int:pk>/', views.ad_detail, name='ad_detail'),
     path('ad/<int:pk>/edit/', views.edit_ad, name='edit_ad'),
