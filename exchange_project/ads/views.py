@@ -84,3 +84,44 @@ def edit_ad(request, pk):
         form = AdForm(instance=ad)
 
     return render(request, 'ads/edit_ad.html', {'form': form, 'ad': ad})
+
+@login_required
+@ad_author_required
+def delete_ad(request, pk):
+    """
+    Удаление объявления с проверкой прав через декоратор
+    """
+    try:
+        ad = Ad.objects.get(pk=pk)
+        ad_title = ad.title  # Сохраняем название для сообщения
+        
+        if request.method == 'POST':
+            # Подтверждение удаления
+            # Удаляем связанные предложения обмена
+            ExchangeProposal.objects.filter(ad_sender=ad).delete()
+            ExchangeProposal.objects.filter(ad_receiver=ad).delete()
+            
+            # Удаляем само объявление
+            ad.delete()
+            messages.success(request, f"Объявление '{ad_title}' и все связанные предложения обмена успешно удалены!")
+            return redirect('index')
+        else:
+            # Показываем страницу подтверждения
+            # Подсчитываем количество связанных предложений
+            sent_proposals_count = ExchangeProposal.objects.filter(ad_sender=ad).count()
+            received_proposals_count = ExchangeProposal.objects.filter(ad_receiver=ad).count()
+            total_proposals = sent_proposals_count + received_proposals_count
+            
+            return render(request, 'ads/delete_ad.html', {
+                'ad': ad,
+                'total_proposals': total_proposals,
+                'sent_proposals_count': sent_proposals_count,
+                'received_proposals_count': received_proposals_count
+            })
+            
+    except Ad.DoesNotExist:
+        messages.error(request, "Объявление не найдено.")
+        return redirect('index')
+    except Exception as e:
+        messages.error(request, f"Произошла ошибка при удалении объявления: {str(e)}")
+        return redirect('ad_detail', pk=pk)

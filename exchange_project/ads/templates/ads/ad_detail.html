@@ -21,7 +21,12 @@
 
 {% if ad.user == user %}
 <div class="ad-actions">
-    <a href="{% url 'edit_ad' pk=ad.pk %}" class="btn">Редактировать объявление</a>
+    <a href="{% url 'edit_ad' pk=ad.pk %}" class="btn btn-primary">
+        <i class="fas fa-edit"></i> Редактировать объявление
+    </a>
+    <a href="{% url 'delete_ad' pk=ad.pk %}" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Удалить объявление
+    </a>
 </div>
 {% endif %}
 
