@@ -1,0 +1,227 @@
+{% extends "ads/base.html" %}
+
+{% block title %}Предложение обмена | Бартерная система{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Основная информация о предложении -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">
+                            <i class="fas fa-exchange-alt"></i> Предложение обмена
+                        </h3>
+                        <span class="badge 
+                            {% if proposal.status == 'P' %}bg-warning{% elif proposal.status == 'A' %}bg-success{% elif proposal.status == 'R' %}bg-danger{% endif %} fs-6">
+                            {% if proposal.status == 'P' %}Ожидает{% elif proposal.status == 'A' %}Принято{% elif proposal.status == 'R' %}Отклонено{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Обмен -->
+                    <div class="row mb-4">
+                        <div class="col-md-5">
+                            <div class="card">
+                                <div class="card-header text-center">
+                                    <strong>Ваше объявление</strong>
+                                </div>
+                                <div class="card-body text-center">
+                                    <h5>{{ proposal.ad_sender.title }}</h5>
+                                    <p class="text-muted">{{ proposal.ad_sender.description|truncatewords:20 }}</p>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <span class="badge bg-primary">{{ proposal.ad_sender.get_category_display }}</span>
+                                        <span class="badge bg-secondary">{{ proposal.ad_sender.get_condition_display }}</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> {{ proposal.ad_sender.user.username }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-arrow-right fa-2x text-primary"></i>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="card">
+                                <div class="card-header text-center">
+                                    <strong>На обмен</strong>
+                                </div>
+                                <div class="card-body text-center">
+                                    <h5>{{ proposal.ad_receiver.title }}</h5>
+                                    <p class="text-muted">{{ proposal.ad_receiver.description|truncatewords:20 }}</p>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <span class="badge bg-primary">{{ proposal.ad_receiver.get_category_display }}</span>
+                                        <span class="badge bg-secondary">{{ proposal.ad_receiver.get_condition_display }}</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> {{ proposal.ad_receiver.user.username }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Комментарий -->
+                    {% if proposal.comment %}
+                    <div class="mb-4">
+                        <h5><i class="fas fa-comment"></i> Комментарий:</h5>
+                        <div class="alert alert-info">
+                            {{ proposal.comment }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Метаданные -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-calendar"></i> Создано:</strong> {{ proposal.created_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong><i class="fas fa-clock"></i> Обновлено:</strong> {{ proposal.updated_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Действия -->
+                <div class="card-footer">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'my_proposals' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Назад к списку
+                        </a>
+                        
+                        {% if is_receiver and proposal.status == 'P' %}
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                            <i class="fas fa-check"></i> Принять
+                        </button>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            <i class="fas fa-times"></i> Отклонить
+                        </button>
+                        {% endif %}
+                        
+                        {% if is_sender and proposal.status == 'P' %}
+                        <a href="{% url 'delete_proposal' proposal.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Удалить
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Информация о статусе -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Информация</h5>
+                </div>
+                <div class="card-body">
+                    {% if is_sender %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-user"></i> <strong>Вы отправили это предложение</strong><br>
+                            Ожидайте ответа от владельца объявления.
+                        </div>
+                    {% elif is_receiver %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-user"></i> <strong>Вам отправлено предложение</strong><br>
+                            Примите или отклоните это предложение.
+                        </div>
+                    {% endif %}
+                    
+                    {% if proposal.status == 'A' %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> <strong>Предложение принято!</strong><br>
+                            Свяжитесь с пользователем для завершения обмена.
+                        </div>
+                    {% elif proposal.status == 'R' %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle"></i> <strong>Предложение отклонено</strong><br>
+                            Это предложение было отклонено.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Ссылки на объявления -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-link"></i> Связанные объявления</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'ad_detail' proposal.ad_sender.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i> Просмотреть "{{ proposal.ad_sender.title }}"
+                        </a>
+                        <a href="{% url 'ad_detail' proposal.ad_receiver.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i> Просмотреть "{{ proposal.ad_receiver.title }}"
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна для принятия/отклонения -->
+{% if is_receiver and proposal.status == 'P' %}
+<!-- Модальное окно принятия -->
+<div class="modal fade" id="acceptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Принять предложение обмена</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите принять это предложение обмена?</p>
+                <p><strong>Обмен:</strong> {{ proposal.ad_sender.title }} ↔ {{ proposal.ad_receiver.title }}</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> При принятии предложения все остальные предложения для этого объявления будут автоматически отклонены.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" action="{% url 'update_proposal_status' proposal.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="A">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Принять
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно отклонения -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Отклонить предложение обмена</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите отклонить это предложение обмена?</p>
+                <p><strong>Обмен:</strong> {{ proposal.ad_sender.title }} ↔ {{ proposal.ad_receiver.title }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" action="{% url 'update_proposal_status' proposal.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="R">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Отклонить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

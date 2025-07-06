@@ -1,0 +1,193 @@
+{% extends "ads/base.html" %}
+
+{% block title %}{{ title }} | Бартерная система{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-exchange-alt"></i> {{ title }}
+                    {% if total_proposals %}
+                        <span class="badge bg-primary">{{ total_proposals }}</span>
+                    {% endif %}
+                </h2>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'my_proposals' %}" class="btn btn-outline-primary {% if not proposal_type %}active{% endif %}">
+                        Все
+                    </a>
+                    <a href="{% url 'my_proposals' %}?type=sent" class="btn btn-outline-primary {% if proposal_type == 'sent' %}active{% endif %}">
+                        Отправленные
+                    </a>
+                    <a href="{% url 'my_proposals' %}?type=received" class="btn btn-outline-primary {% if proposal_type == 'received' %}active{% endif %}">
+                        Полученные
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Фильтры -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="status" class="form-label">Статус</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Все статусы</option>
+                                {% for code, name in status_choices %}
+                                    <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>
+                                        {% if code == 'P' %}Ожидает{% elif code == 'A' %}Принято{% elif code == 'R' %}Отклонено{% else %}{{ name }}{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="type" class="form-label">Тип</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="">Все типы</option>
+                                <option value="sent" {% if proposal_type == 'sent' %}selected{% endif %}>Отправленные</option>
+                                <option value="received" {% if proposal_type == 'received' %}selected{% endif %}>Полученные</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter"></i> Фильтровать
+                            </button>
+                            <a href="{% url 'my_proposals' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Сбросить
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Список предложений -->
+            {% if proposals %}
+                <div class="row">
+                    {% for proposal in proposals %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> {{ proposal.created_at|date:"d.m.Y H:i" }}
+                                </small>
+                                <span class="badge 
+                                    {% if proposal.status == 'P' %}bg-warning{% elif proposal.status == 'A' %}bg-success{% elif proposal.status == 'R' %}bg-danger{% endif %}">
+                                    {% if proposal.status == 'P' %}Ожидает{% elif proposal.status == 'A' %}Принято{% elif proposal.status == 'R' %}Отклонено{% endif %}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-arrow-right"></i> 
+                                    {{ proposal.ad_sender.title }} 
+                                    <i class="fas fa-arrow-right"></i> 
+                                    {{ proposal.ad_receiver.title }}
+                                </h6>
+                                
+                                {% if proposal.comment %}
+                                <p class="card-text text-muted">
+                                    <i class="fas fa-comment"></i> {{ proposal.comment|truncatewords:15 }}
+                                </p>
+                                {% endif %}
+                                
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <strong>От:</strong><br>
+                                            {{ proposal.ad_sender.user.username }}
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">
+                                            <strong>К:</strong><br>
+                                            {{ proposal.ad_receiver.user.username }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'proposal_detail' proposal.pk %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> Просмотр
+                                    </a>
+                                    {% if proposal.user == user and proposal.status == 'P' %}
+                                    <a href="{% url 'delete_proposal' proposal.pk %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i> Удалить
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Пагинация -->
+                {% if proposals.has_other_pages %}
+                <nav aria-label="Навигация по страницам">
+                    <ul class="pagination justify-content-center">
+                        {% if proposals.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if proposal_type %}&type={{ proposal_type }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ proposals.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if proposal_type %}&type={{ proposal_type }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in proposals.paginator.page_range %}
+                            {% if proposals.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > proposals.number|add:'-3' and num < proposals.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if proposal_type %}&type={{ proposal_type }}{% endif %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if proposals.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ proposals.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if proposal_type %}&type={{ proposal_type }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ proposals.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if proposal_type %}&type={{ proposal_type }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Предложений обмена не найдено</h4>
+                    <p class="text-muted">
+                        {% if proposal_type == 'sent' %}
+                            Вы еще не отправляли предложения обмена
+                        {% elif proposal_type == 'received' %}
+                            Вам еще не отправляли предложения обмена
+                        {% else %}
+                            У вас пока нет предложений обмена
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'index' %}" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Найти объявления
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

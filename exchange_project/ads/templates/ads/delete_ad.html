@@ -1,0 +1,52 @@
+{% extends 'ads/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Подтверждение удаления</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Вы уверены, что хотите удалить объявление?</h5>
+                    <p class="card-text">
+                        <strong>Название:</strong> {{ ad.title }}<br>
+                        <strong>Категория:</strong> {{ ad.get_category_display }}<br>
+                        <strong>Состояние:</strong> {{ ad.get_condition_display }}<br>
+                        <strong>Дата создания:</strong> {{ ad.created_at|date:"d.m.Y H:i" }}
+                    </p>
+                    
+                    {% if total_proposals > 0 %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Связанные предложения обмена:</strong><br>
+                        • Отправленных предложений: {{ sent_proposals_count }}<br>
+                        • Полученных предложений: {{ received_proposals_count }}<br>
+                        <strong>Всего: {{ total_proposals }}</strong><br>
+                        <small>Все связанные предложения обмена также будут удалены.</small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Внимание!</strong> Это действие нельзя отменить. Все данные объявления будут безвозвратно удалены.
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Удалить
+                            </button>
+                            <a href="{% url 'ad_detail' pk=ad.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
