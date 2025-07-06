@@ -26,6 +26,7 @@
 {% endif %}
 
 <h3>Отправить предложение обмена:</h3>
+<p><strong>Вы предлагаете обменять ваше объявление на:</strong> {{ ad.title }}</p>
 {% if form.errors %}
 <div class="alert alert-error">
     <strong>Ошибки в форме:</strong>
@@ -42,6 +43,6 @@
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Отправить</button>
+  <button type="submit">Отправить предложение</button>
 </form>
 {% endblock %}

@@ -19,24 +19,38 @@ def index(request):
     ads = Ad.objects.all()
     return render(request, 'ads/index.html', {'ads': ads})
 
+
+# В views.py - исправляем логику
 @login_required
 def ad_detail(request, pk):
     ad = get_object_or_404(Ad, pk=pk)
+    is_author = ad.user == request.user
+
     if request.method == 'POST':
+        if is_author:
+            messages.error(request, "Вы не можете отправить предложение обмена самому себе.")
+            return redirect('ad_detail', pk=pk)
+
         form = ProposalForm(request.POST)
         if form.is_valid():
             proposal = form.save(commit=False)
-            proposal.ad_sender = ad
+            proposal.ad_receiver = ad  # Объявление, на которое хотят обменять
+            proposal.ad_sender = form.cleaned_data['ad_sender']  # Объявление пользователя
             proposal.user = request.user
             proposal.save()
             messages.success(request, "Предложение обмена отправлено!")
             return redirect('ad_detail', pk=pk)
-        else:
-            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
     else:
+        # Показываем только объявления текущего пользователя
+        user_ads = Ad.objects.filter(user=request.user)
         form = ProposalForm()
+        form.fields['ad_sender'].queryset = user_ads
 
-    return render(request, 'ads/ad_detail.html', {'ad': ad, 'form': form})
+    return render(request, 'ads/ad_detail.html', {
+        'ad': ad,
+        'form': form,
+        'is_author': is_author
+    })
 
 @login_required
 def create_ad(request):
