@@ -177,3 +177,131 @@ def delete_ad(request, pk):
     except Exception as e:
         messages.error(request, f"Произошла ошибка при удалении объявления: {str(e)}")
         return redirect('ad_detail', pk=pk)
+
+@login_required
+def my_proposals(request):
+    """
+    Просмотр предложений обмена пользователя
+    """
+    # Получаем параметры фильтрации
+    status_filter = request.GET.get('status', '')
+    proposal_type = request.GET.get('type', '')  # sent или received
+    
+    # Базовый QuerySet
+    if proposal_type == 'sent':
+        proposals = ExchangeProposal.objects.filter(user=request.user)
+        title = "Мои отправленные предложения"
+    elif proposal_type == 'received':
+        proposals = ExchangeProposal.objects.filter(ad_receiver__user=request.user)
+        title = "Полученные предложения"
+    else:
+        # Показываем все предложения пользователя
+        proposals = ExchangeProposal.objects.filter(
+            Q(user=request.user) | Q(ad_receiver__user=request.user)
+        )
+        title = "Все предложения обмена"
+    
+    # Фильтрация по статусу
+    if status_filter:
+        proposals = proposals.filter(status=status_filter)
+    
+    # Пагинация
+    paginator = Paginator(proposals, 10)
+    page = request.GET.get('page')
+    
+    try:
+        proposals_page = paginator.page(page)
+    except PageNotAnInteger:
+        proposals_page = paginator.page(1)
+    except EmptyPage:
+        proposals_page = paginator.page(paginator.num_pages)
+    
+    context = {
+        'proposals': proposals_page,
+        'title': title,
+        'status_filter': status_filter,
+        'proposal_type': proposal_type,
+        'status_choices': ExchangeProposal.STATUS_CHOICES,
+        'total_proposals': proposals.count(),
+    }
+    
+    return render(request, 'ads/my_proposals.html', context)
+
+@login_required
+def proposal_detail(request, pk):
+    """
+    Детальный просмотр предложения обмена
+    """
+    proposal = get_object_or_404(ExchangeProposal, pk=pk)
+    
+    # Проверяем права доступа
+    if proposal.user != request.user and proposal.ad_receiver.user != request.user:
+        messages.error(request, "У вас нет прав для просмотра этого предложения.")
+        return redirect('my_proposals')
+    
+    context = {
+        'proposal': proposal,
+        'is_sender': proposal.user == request.user,
+        'is_receiver': proposal.ad_receiver.user == request.user,
+    }
+    
+    return render(request, 'ads/proposal_detail.html', context)
+
+@login_required
+def update_proposal_status(request, pk):
+    """
+    Обновление статуса предложения обмена
+    """
+    proposal = get_object_or_404(ExchangeProposal, pk=pk)
+    
+    # Проверяем права доступа (только получатель может изменять статус)
+    if proposal.ad_receiver.user != request.user:
+        messages.error(request, "У вас нет прав для изменения статуса этого предложения.")
+        return redirect('proposal_detail', pk=pk)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in ['A', 'R']:  # Accepted или Rejected
+            old_status = proposal.status
+            proposal.status = new_status
+            proposal.save()
+            
+            status_names = {
+                'A': 'принято',
+                'R': 'отклонено'
+            }
+            
+            messages.success(request, f"Предложение обмена {status_names[new_status]}!")
+            
+            # Если предложение принято, можно автоматически обновить статусы других предложений
+            if new_status == 'A':
+                # Отклоняем все остальные предложения для этого объявления
+                ExchangeProposal.objects.filter(
+                    ad_receiver=proposal.ad_receiver,
+                    status='P'
+                ).exclude(pk=proposal.pk).update(status='R')
+                
+                messages.info(request, "Все остальные предложения для этого объявления автоматически отклонены.")
+        
+        return redirect('proposal_detail', pk=pk)
+    
+    return redirect('proposal_detail', pk=pk)
+
+@login_required
+def delete_proposal(request, pk):
+    """
+    Удаление предложения обмена
+    """
+    proposal = get_object_or_404(ExchangeProposal, pk=pk)
+    
+    # Проверяем права доступа (только отправитель может удалить)
+    if proposal.user != request.user:
+        messages.error(request, "У вас нет прав для удаления этого предложения.")
+        return redirect('proposal_detail', pk=pk)
+    
+    if request.method == 'POST':
+        proposal.delete()
+        messages.success(request, "Предложение обмена удалено!")
+        return redirect('my_proposals')
+    
+    return render(request, 'ads/delete_proposal.html', {'proposal': proposal})

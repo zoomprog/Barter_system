@@ -34,6 +34,14 @@
                                 <i class="fas fa-plus"></i> Создать объявление
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'my_proposals' %}">
+                                <i class="fas fa-exchange-alt"></i> Предложения
+                                {% if total_pending_proposals > 0 %}
+                                    <span class="badge bg-warning">{{ total_pending_proposals }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
                     {% endif %}
                 </ul>
                 
