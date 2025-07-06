@@ -23,7 +23,7 @@ urlpatterns = [
     path('', include('ads.urls')),
 
     # Маршруты для авторизации
-    path('login/', auth_views.LoginView.as_view(template_name='ads/login.html',redirect_field_name='next',success_url='ads/login.html'), name='login'),
+    path('login/', auth_views.LoginView.as_view(template_name='ads/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
 ]

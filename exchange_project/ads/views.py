@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.views import generic
 from django.urls import reverse_lazy
+from django.http import Http404
+from django.contrib import messages
 # Create your views here.
 
 class SignUpView(generic.CreateView):
@@ -45,3 +47,20 @@ def create_ad(request):
     else:
         form = AdForm()
     return render(request, 'ads/create_ad.html', {'form': form})
+
+@login_required
+def edit_ad(request, pk):
+    ad = get_object_or_404(Ad, pk=pk)
+    # Проверяем пользователь автор объявления
+    if ad.user != request.user:
+        messages.error(request, 'Вы можете редактировать только свои собственные объявления.')
+        return redirect('ad_detail', pk=pk)
+    if request.method == 'POST':
+        form = AdForm(request.POST, instance=ad)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Ad updated successfully!')
+            return redirect('ad_detail', pk=pk)
+    else:
+        form = AdForm(instance=ad)
+    return render(request, 'ads/edit_ad.html', {'form': form, 'ad': ad},)

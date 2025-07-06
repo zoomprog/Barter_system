@@ -2,9 +2,26 @@
 {% block title %}{{ ad.title }} | Бартерная система{% endblock %}
 {% block content %}
 <h2>{{ ad.title }}</h2>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <p><strong>Описание:</strong> {{ ad.description }}</p>
 <p><strong>Категория:</strong> {{ ad.get_category_display }}</p>
 <p><strong>Состояние:</strong> {{ ad.get_condition_display }}</p>
+
+{% if ad.user == user %}
+<div class="ad-actions">
+    <a href="{% url 'edit_ad' pk=ad.pk %}" class="btn">Редактировать объявление</a>
+</div>
+{% endif %}
 
 <h3>Отправить предложение обмена:</h3>
 <form method="post">
